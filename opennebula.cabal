@@ -1,0 +1,15 @@
+name:                  opennebula
+version:               0.0.1
+synopsis:              opennebula, XML-RPC API haskell bindings
+description:           opennebula, XML-RPC API haskell bindings
+author:                Nikolaos Bezirgiannis
+maintainer:            NikolaosBezirgiannis <bezirgia@cwi.nl>
+stability:             provisional
+build-type:            Simple
+cabal-version:         >= 1.8
+                      
+library
+  build-depends:      base, haxr-browser, HTTP, transformers, utf8-string
+  exposed-modules:    OpenNebula 
+  --ghc-options:        -rtsopts -threaded -fwarn-unused-imports
+  hs-source-dirs:     src
