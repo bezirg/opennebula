@@ -24,6 +24,11 @@ vmpool_info filterFlag rangeStart rangeEnd filterState = do
   (serv, sess) <- ask
   lift $ remote serv "one.vmpool.info" sess filterFlag rangeStart rangeEnd filterState
 
+vm_allocate :: String -> RPC (Bool, Int, Int)
+vm_allocate templ = do
+  (serv, sess) <- ask
+  lift $ remote serv "one.vm.allocate" sess templ
+
 xmlrpc :: String -> String -> Maybe String -> RPC a -> IO a
 xmlrpc server session maybeProxy comms = browse $ do
                                            maybe (return ()) (\ proxy_server -> setProxy (Proxy proxy_server Nothing)) maybeProxy

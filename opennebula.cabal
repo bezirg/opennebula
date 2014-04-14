@@ -9,7 +9,7 @@ build-type:            Simple
 cabal-version:         >= 1.8
                       
 library
-  build-depends:      base, haxr-browser, HTTP, transformers, utf8-string
-  exposed-modules:    OpenNebula 
+  build-depends:      base, haxr-browser, HTTP, transformers, utf8-string, xml
+  exposed-modules:    OpenNebula, Template
   --ghc-options:        -rtsopts -threaded -fwarn-unused-imports
   hs-source-dirs:     src
