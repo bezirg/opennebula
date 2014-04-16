@@ -10,6 +10,6 @@ cabal-version:         >= 1.8
                       
 library
   build-depends:      base, haxr-browser, HTTP, transformers, utf8-string, xml
-  exposed-modules:    OpenNebula, Template
+  exposed-modules:    OpenNebula, OpenNebula.API, OpenNebula.Template
   --ghc-options:        -rtsopts -threaded -fwarn-unused-imports
   hs-source-dirs:     src
