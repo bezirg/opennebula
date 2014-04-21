@@ -1,9 +1,15 @@
 {-# LANGUAGE LambdaCase #-}
-module OpenNebula.Template (inheritXmlTemplate, contextualize, toPlain, showPlain)  where
+module OpenNebula.Template (inheritXmlTemplate, contextualize, toPlain, showPlain, extractVmId)  where
 
 import Text.XML.Light 
 import qualified Text.XML.Light.Cursor as Z
 import Data.List (intersperse)
+
+extractVmId :: String -> Maybe Int
+extractVmId xml_str = do
+  vmElem <- parseXMLDoc xml_str
+  vmIdElem <- findChild (QName "ID" Nothing Nothing) vmElem
+  return $ read $ strContent vmIdElem
 
 
 -- | inheritXmlTemplate :: Input -> From -> Maybe XMLTree
