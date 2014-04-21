@@ -29,6 +29,12 @@ vm_allocate templ = do
   (serv, sess) <- ask
   lift $ remote serv "one.vm.allocate" sess templ
 
+vm_action :: String -> Int -> RPC (Bool, Int, Int)
+vm_action actionName vmId = do
+  (serv, sess) <- ask
+  lift $ remote serv "one.vm.action" sess actionName vmId
+  
+
 xmlrpc :: String -> String -> Maybe String -> RPC a -> IO a
 xmlrpc server session maybeProxy comms = browse $ do
                                            maybe (return ()) (\ proxy_server -> setProxy (Proxy proxy_server Nothing)) maybeProxy
