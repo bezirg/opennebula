@@ -65,7 +65,7 @@ contextualize from new_cpu new_mem templElem = addSlaveContext from templElem >>
     addSlaveContext :: String -> Element -> Maybe Element
     addSlaveContext from templElem = do
       --CONTEXT=[
-      -- FROM=0.0.0.0,
+      -- FROM=0.0.0.0 or creator_pid,
       -- TYPE=master,
       -- VM_TEMPLATE=$TEMPLATE ]
       let c = Z.fromElement templElem
