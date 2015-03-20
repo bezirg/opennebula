@@ -15,9 +15,9 @@ import qualified Data.ByteString.UTF8 as U
 type RPC = ReaderT (String, String) (BrowserAction (HandleStream U.ByteString))
 
 vm_info :: Int -> RPC (Bool, String, Int)
-vm_info objectId = do
+vm_info vmId = do
   (serv, sess) <- ask
-  lift $ remote serv "one.vm.info" sess objectId
+  lift $ remote serv "one.vm.info" sess vmId
 
 vmpool_info :: Int -> Int -> Int -> Int -> RPC (Bool, String, Int)
 vmpool_info filterFlag rangeStart rangeEnd filterState = do
@@ -34,9 +34,12 @@ vm_action actionName vmId = do
   (serv, sess) <- ask
   lift $ remote serv "one.vm.action" sess actionName vmId
   
+template_info :: Int -> RPC (Bool, String, Int)
+template_info templId = do
+  (serv, sess) <- ask
+  lift $ remote serv "one.template.info" sess templId
 
 xmlrpc :: String -> String -> Maybe String -> RPC a -> IO a
 xmlrpc server session maybeProxy comms = browse $ do
                                            maybe (return ()) (\ proxy_server -> setProxy (Proxy proxy_server Nothing)) maybeProxy
                                            runReaderT comms (server, session)
-
