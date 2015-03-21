@@ -13,7 +13,6 @@ import qualified Text.XML.Light.Cursor as Z
 import Data.List (intersperse)
 import qualified Data.Binary as Bin
 import qualified Codec.Binary.Base64.String as Base64 (decode)
-import qualified Data.ByteString.Lazy.UTF8 as UTF8 (toString)
 
 -- | Given an XML-Nebula template as a string,
 -- it returns (if there is one) the ID of the VM associated/instantiated by this template,
@@ -127,7 +126,7 @@ cloneSlaveTemplate templ newCpu newMem fromPid rpcServer rpcProxy session = do
     -- | Because the CONTEXT is stripped off, we have to add it again, manually.
     addSlaveContext :: XML.Element -> Maybe XML.Element
     addSlaveContext templElem = do
-      let fromPidStr = UTF8.toString $ Bin.encode fromPid
+      let fromPidStr = show $ Bin.encode fromPid
       let c = Z.fromElement templElem
       rest <- (Z.firstChild c)
       let added = Z.insertLeft (Elem (XML.Element (QName "CONTEXT" Nothing Nothing) []
@@ -139,12 +138,12 @@ cloneSlaveTemplate templ newCpu newMem fromPid rpcServer rpcProxy session = do
     -- SESSION="username:password",
     -- TYPE="master" or "slave",
     -- VM_TEMPLATE=$TEMPLATE ]
-            (Elem (XML.Element (QName "FROM_PID" Nothing Nothing) [] [Text $ CData CDataVerbatim fromPidStr Nothing] Nothing)),
-            (Elem (XML.Element (QName "RPC_SERVER" Nothing Nothing) [] [Text $ CData CDataVerbatim rpcServer Nothing] Nothing)),
-            (Elem (XML.Element (QName "RPC_PROXY" Nothing Nothing) [] [Text $ CData CDataVerbatim rpcProxy Nothing] Nothing)),
-            (Elem (XML.Element (QName "SESSION" Nothing Nothing) [] [Text $ CData CDataVerbatim session Nothing] Nothing)),
-            (Elem (XML.Element (QName "TYPE" Nothing Nothing) [] [Text $ CData CDataVerbatim "slave" Nothing] Nothing)),
-            (Elem (XML.Element (QName "VM_TEMPLATE" Nothing Nothing) [] [Text $ CData CDataVerbatim "$TEMPLATE" Nothing] Nothing))
+            (Elem (XML.Element (QName "FROM_PID" Nothing Nothing) [] [Text $ CData CDataText fromPidStr Nothing] Nothing)),
+            (Elem (XML.Element (QName "RPC_SERVER" Nothing Nothing) [] [Text $ CData CDataText rpcServer Nothing] Nothing)),
+            (Elem (XML.Element (QName "RPC_PROXY" Nothing Nothing) [] [Text $ CData CDataText rpcProxy Nothing] Nothing)),
+            (Elem (XML.Element (QName "SESSION" Nothing Nothing) [] [Text $ CData CDataText session Nothing] Nothing)),
+            (Elem (XML.Element (QName "TYPE" Nothing Nothing) [] [Text $ CData CDataText "slave" Nothing] Nothing)),
+            (Elem (XML.Element (QName "VM_TEMPLATE" Nothing Nothing) [] [Text $ CData CDataText "$TEMPLATE" Nothing] Nothing))
            ]
                         Nothing)) rest
       return $ case Z.toTree (Z.root added) of
