@@ -12,8 +12,9 @@ import Text.XML.Light as XML
 import qualified Text.XML.Light.Cursor as Z
 import Data.List (intersperse)
 import Control.Monad (liftM)
-import Data.Binary
-import qualified Data.ByteString.Lazy.UTF8 as U (toString)
+import qualified Data.Binary as Bin
+import qualified Codec.Binary.Base64.String as Base64 (decode)
+import qualified Data.ByteString.Lazy.UTF8 as UTF8 (toString)
 
 -- | Given an XML-Nebula template as a string,
 -- it returns (if there is one) the ID of the VM associated/instantiated by this template,
@@ -24,9 +25,10 @@ templateVmId xml_str = do
   return $ read $ strContent vmIdElem
 
 -- | Parses an XML-Nebula template given (as a string)
--- to an XML tree and remove some unnecessary nodes,
--- that are automatically filled up the next time
--- the template is instantiated.
+-- After parsing, it strips data that are specific
+-- to node, and leaves the template generic.
+-- The stripped data will be automatically filled up by opennebula.
+-- *NOTE*: the CONTEXT is stripped off before passed to $VM_TEMPLATE context variable.
 stripXmlTemplate :: String ->  Maybe XML.Element
 stripXmlTemplate xml_str = do
   doc <- parseXMLDoc xml_str
@@ -86,7 +88,7 @@ xmlToPlainTemplate = pTemplate
   where
     pTemplate :: XML.Element -> PlainTemplate
     pTemplate (XML.Element (QName "TEMPLATE" _ _) _attrs content _line ) = PlainTemplate (map pContent content)
-    pTemplate _ = error "parsing xml failed"
+    pTemplate _ = error "conversion to plain template failed"
 
     pElement :: XML.Element -> PlainTemplateEntry
     pElement (XML.Element (QName name _ _) _attrs [Text (CData _kind str _)] _line ) = SingleEntry name ('"' : str ++ "\"")
@@ -94,7 +96,7 @@ xmlToPlainTemplate = pTemplate
 
     pContent :: XML.Content -> PlainTemplateEntry
     pContent (XML.Elem e) = pElement e
-    pContent _ = error "parsing xml failed"
+    pContent _ = error "conversion to plain template failed"
 
 -- | The root node of the PlainTemplate Datatype
 newtype PlainTemplate = PlainTemplate { entries :: [PlainTemplateEntry] } 
@@ -112,17 +114,24 @@ instance Show PlainTemplateEntry where
     show (SingleEntry key value) = key ++ "=" ++ value
     show (ManyEntry key values) = key ++ "= [" ++ unlines (intersperse "," $ map show values) ++ "]"
 
--- | Given a template, it creates an inherited template
+-- | Given a XML-Base64-encoded template, it creates an inherited template
 -- with the cpu, memory and CreatorPid specifications altered.
-cloneSlaveTemplate :: Binary a => String -> Int -> Int -> a -> Maybe String
-cloneSlaveTemplate templ newCpu newMem fromPid = do
-  let fromPidStr = U.toString (encode fromPid)
+-- The cloned template is returned in plain format, so it can be used with old versions of OpenNebula =< 3.2)
+cloneSlaveTemplate :: Bin.Binary a => String -> Int -> Int -> a -> String -> String -> String -> Maybe String
+cloneSlaveTemplate templ newCpu newMem fromPid rpcServer rpcProxy session = do
   xml <- stripXmlTemplate templ
-  xml' <- addSlaveContext fromPidStr xml
+  xml' <- addSlaveContext xml
   xml'' <- changeCPUMemory newCpu newMem xml'
   return $ show $ xmlToPlainTemplate xml''
   where 
-    -- | Adds slave context
+    -- | Because the CONTEXT is stripped off, we have to add it again, manually.
+    addSlaveContext :: XML.Element -> Maybe XML.Element
+    addSlaveContext templElem = do
+      let fromPidStr = UTF8.toString $ Bin.encode fromPid
+      let c = Z.fromElement templElem
+      rest <- (Z.firstChild c)
+      let added = Z.insertLeft (Elem (XML.Element (QName "CONTEXT" Nothing Nothing) []
+           [
     --CONTEXT=[
     -- FROM_PID="0.0.0.0" or "creator_pid",
     -- RPC_SERVER="http://one-xmlrpc.calligo.sara.nl:2633/RPC2",
@@ -130,15 +139,13 @@ cloneSlaveTemplate templ newCpu newMem fromPid = do
     -- SESSION="username:password",
     -- TYPE="master" or "slave",
     -- VM_TEMPLATE=$TEMPLATE ]
-    addSlaveContext :: String -> XML.Element -> Maybe XML.Element
-    addSlaveContext from templElem = do
-      let c = Z.fromElement templElem
-      rest <- (Z.firstChild c)
-      let added = Z.insertLeft (Elem (XML.Element (QName "CONTEXT" Nothing Nothing) [] [
-                                                 (Elem (XML.Element (QName "FROM_PID" Nothing Nothing) [] [Text $ CData CDataVerbatim from Nothing] Nothing)),
-                                                 (Elem (XML.Element (QName "TYPE" Nothing Nothing) [] [Text $ CData CDataVerbatim "slave" Nothing] Nothing)),
-                                                 (Elem (XML.Element (QName "VM_TEMPLATE" Nothing Nothing) [] [Text $ CData CDataVerbatim "$TEMPLATE" Nothing] Nothing))
-                                     ]
+            (Elem (XML.Element (QName "FROM_PID" Nothing Nothing) [] [Text $ CData CDataVerbatim fromPidStr Nothing] Nothing)),
+            (Elem (XML.Element (QName "RPC_SERVER" Nothing Nothing) [] [Text $ CData CDataVerbatim rpcServer Nothing] Nothing)),
+            (Elem (XML.Element (QName "RPC_PROXY" Nothing Nothing) [] [Text $ CData CDataVerbatim rpcProxy Nothing] Nothing)),
+            (Elem (XML.Element (QName "SESSION" Nothing Nothing) [] [Text $ CData CDataVerbatim session Nothing] Nothing)),
+            (Elem (XML.Element (QName "TYPE" Nothing Nothing) [] [Text $ CData CDataVerbatim "slave" Nothing] Nothing)),
+            (Elem (XML.Element (QName "VM_TEMPLATE" Nothing Nothing) [] [Text $ CData CDataVerbatim "$TEMPLATE" Nothing] Nothing))
+           ]
                         Nothing)) rest
       return $ case Z.toTree (Z.root added) of
                  Elem e -> e
