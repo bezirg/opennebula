@@ -1,5 +1,5 @@
 name:                  opennebula
-version:               0.0.5
+version:               0.0.6
 synopsis:              opennebula, XML-RPC API haskell bindings
 description:           opennebula, XML-RPC API haskell bindings
 author:                Nikolaos Bezirgiannis

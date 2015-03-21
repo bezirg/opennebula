@@ -11,7 +11,6 @@ module OpenNebula.Template
 import Text.XML.Light as XML
 import qualified Text.XML.Light.Cursor as Z
 import Data.List (intersperse)
-import Control.Monad (liftM)
 import qualified Data.Binary as Bin
 import qualified Codec.Binary.Base64.String as Base64 (decode)
 import qualified Data.ByteString.Lazy.UTF8 as UTF8 (toString)
@@ -119,7 +118,8 @@ instance Show PlainTemplateEntry where
 -- The cloned template is returned in plain format, so it can be used with old versions of OpenNebula =< 3.2)
 cloneSlaveTemplate :: Bin.Binary a => String -> Int -> Int -> a -> String -> String -> String -> Maybe String
 cloneSlaveTemplate templ newCpu newMem fromPid rpcServer rpcProxy session = do
-  xml <- stripXmlTemplate templ
+  let templDec = Base64.decode templ
+  xml <- stripXmlTemplate templDec
   xml' <- addSlaveContext xml
   xml'' <- changeCPUMemory newCpu newMem xml'
   return $ show $ xmlToPlainTemplate xml''
