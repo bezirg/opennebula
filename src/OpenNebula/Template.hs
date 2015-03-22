@@ -14,11 +14,12 @@ import Data.List (intersperse)
 import qualified Data.Binary as Bin
 import qualified Codec.Binary.Base64.String as Base64 (decode)
 
--- | Given an XML-Nebula template as a string,
+-- | Given an XML-Base64-encoded Nebula template as a string,
 -- it returns (if there is one) the ID of the VM associated/instantiated by this template,
 templateVmId :: String -> Maybe Int
-templateVmId xml_str = do
-  vmElem <- parseXMLDoc xml_str
+templateVmId xmlStr = do
+  let xmlDec = Base64.decode xmlStr
+  vmElem <- parseXMLDoc xmlDec
   vmIdElem <- findChild (QName "ID" Nothing Nothing) vmElem
   return $ read $ strContent vmIdElem
 
