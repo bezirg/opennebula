@@ -2,7 +2,7 @@
 module OpenNebula.Template 
     (
      PlainTemplate (..), PlainTemplateEntry (..), -- the PlainTemplate datatypes
-     templateVmId,
+     templateVmId, templateVmIP,
      stripXmlTemplate, 
      xmlToPlainTemplate,
      cloneSlaveTemplate
@@ -22,6 +22,16 @@ templateVmId xmlStr = do
   vmElem <- parseXMLDoc xmlDec
   vmIdElem <- findChild (QName "ID" Nothing Nothing) vmElem
   return $ read $ strContent vmIdElem
+
+-- | extracts the 1st NIC device IP 
+-- (1st by default, maybe have to be more specific later, and only filter out the local NIC)
+templateVmIP :: String -> Maybe String
+templateVmIP xmlStr = do
+  let xmlDec = Base64.decode xmlStr
+  rootXML <- parseXMLDoc xmlDec
+  nic1XML <- findElement (QName "NIC" Nothing Nothing) rootXML
+  ipXML <- findChild (QName "IP" Nothing Nothing) nic1XML
+  return $ strContent ipXML
 
 -- | Parses an XML-Nebula template given (as a string)
 -- After parsing, it strips data that are specific
