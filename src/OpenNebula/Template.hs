@@ -126,8 +126,8 @@ instance Show PlainTemplateEntry where
 -- | Given a XML-Base64-encoded template, it creates an inherited template
 -- with the cpu, memory and CreatorPid specifications altered.
 -- The cloned template is returned in plain format, so it can be used with old versions of OpenNebula =< 3.2)
-cloneSlaveTemplate :: Bin.Binary a => String -> Int -> Int -> a -> String -> String -> String -> Maybe String
-cloneSlaveTemplate templ newCpu newMem fromPid rpcServer rpcProxy session = do
+cloneSlaveTemplate :: Bin.Binary a => String -> Int -> Int -> a -> String -> String -> String -> String -> Maybe String
+cloneSlaveTemplate templ newCpu newMem fromPid rpcServer rpcProxy session progName = do
   let templDec = Base64.decode templ
   xml <- stripXmlTemplate templDec
   xml' <- addSlaveContext xml
@@ -147,13 +147,13 @@ cloneSlaveTemplate templ newCpu newMem fromPid rpcServer rpcProxy session = do
     -- RPC_SERVER="http://one-xmlrpc.calligo.sara.nl:2633/RPC2",
     -- RPC_PROXY="10.0.212.3:3128",
     -- SESSION="username:password",
-    -- TYPE="master" or "slave",
+    -- FROM_PROG="the ABS program-executable name (stared from master) and that the slave takes from virdir" 
     -- VM_TEMPLATE=$TEMPLATE ]
             (Elem (XML.Element (QName "FROM_PID" Nothing Nothing) [] [Text $ CData CDataText fromPidStr Nothing] Nothing)),
             (Elem (XML.Element (QName "RPC_SERVER" Nothing Nothing) [] [Text $ CData CDataText rpcServer Nothing] Nothing)),
             (Elem (XML.Element (QName "RPC_PROXY" Nothing Nothing) [] [Text $ CData CDataText rpcProxy Nothing] Nothing)),
             (Elem (XML.Element (QName "SESSION" Nothing Nothing) [] [Text $ CData CDataText session Nothing] Nothing)),
-            (Elem (XML.Element (QName "TYPE" Nothing Nothing) [] [Text $ CData CDataText "slave" Nothing] Nothing)),
+            (Elem (XML.Element (QName "FROM_PROG" Nothing Nothing) [] [Text $ CData CDataText progName Nothing] Nothing)),
             (Elem (XML.Element (QName "VM_TEMPLATE" Nothing Nothing) [] [Text $ CData CDataText "$TEMPLATE" Nothing] Nothing))
            ]
                         Nothing)) rest
