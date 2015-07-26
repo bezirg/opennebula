@@ -126,7 +126,7 @@ instance Show PlainTemplateEntry where
 -- | Given a XML-Base64-encoded template, it creates an inherited template
 -- with the cpu, memory and CreatorPid specifications altered.
 -- The cloned template is returned in plain format, so it can be used with old versions of OpenNebula =< 3.2)
-cloneSlaveTemplate :: Bin.Binary a => String -> Int -> Int -> a -> String -> String -> String -> String -> Maybe String
+cloneSlaveTemplate :: String -> Int -> Int -> String -> String -> String -> String -> String -> Maybe String
 cloneSlaveTemplate templ newCpu newMem fromPid rpcServer rpcProxy session progName = do
   let templDec = Base64.decode templ
   xml <- stripXmlTemplate templDec
@@ -137,7 +137,6 @@ cloneSlaveTemplate templ newCpu newMem fromPid rpcServer rpcProxy session progNa
     -- | Because the CONTEXT is stripped off, we have to add it again, manually.
     addSlaveContext :: XML.Element -> Maybe XML.Element
     addSlaveContext templElem = do
-      let fromPidStr = show $ Bin.encode fromPid
       let c = Z.fromElement templElem
       rest <- (Z.firstChild c)
       let added = Z.insertLeft (Elem (XML.Element (QName "CONTEXT" Nothing Nothing) []
@@ -149,7 +148,7 @@ cloneSlaveTemplate templ newCpu newMem fromPid rpcServer rpcProxy session progNa
     -- SESSION="username:password",
     -- FROM_PROG="the ABS program-executable name (stared from master) and that the slave takes from virdir" 
     -- VM_TEMPLATE=$TEMPLATE ]
-            (Elem (XML.Element (QName "FROM_PID" Nothing Nothing) [] [Text $ CData CDataText fromPidStr Nothing] Nothing)),
+            (Elem (XML.Element (QName "FROM_PID" Nothing Nothing) [] [Text $ CData CDataText fromPid Nothing] Nothing)),
             (Elem (XML.Element (QName "RPC_SERVER" Nothing Nothing) [] [Text $ CData CDataText rpcServer Nothing] Nothing)),
             (Elem (XML.Element (QName "RPC_PROXY" Nothing Nothing) [] [Text $ CData CDataText rpcProxy Nothing] Nothing)),
             (Elem (XML.Element (QName "SESSION" Nothing Nothing) [] [Text $ CData CDataText session Nothing] Nothing)),
